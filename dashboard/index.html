@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌊 GitHub Green Wave Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 1.5rem; color: #3fb950; }
+    header span { font-size: 1.5rem; }
+    .status-badge {
+      margin-left: auto;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status-badge.on  { background: #1a4731; color: #3fb950; border: 1px solid #3fb950; }
+    .status-badge.off { background: #3d1a1a; color: #f85149; border: 1px solid #f85149; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+    .card.full-width { grid-column: 1 / -1; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-green  { background: #238636; color: #fff; }
+    .btn-red    { background: #da3633; color: #fff; }
+    .btn-gray   { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+    .btn-blue   { background: #1f6feb; color: #fff; }
+
+    /* Run Now section */
+    .run-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    #runStatus {
+      font-size: 0.9rem;
+      color: #8b949e;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* Settings form */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    label { font-size: 0.85rem; color: #8b949e; }
+    input[type="text"], input[type="number"], input[type="email"] {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    input:focus { outline: none; border-color: #1f6feb; }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: #3fb950;
+    }
+    #probValue {
+      font-weight: 700;
+      color: #3fb950;
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-top: 1px solid #21262d;
+      border-bottom: 1px solid #21262d;
+      margin: 16px 0;
+    }
+    .toggle-label { font-size: 0.95rem; }
+    /* Toggle switch */
+    .toggle { position: relative; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider-toggle {
+      position: absolute; inset: 0;
+      background: #30363d;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .slider-toggle:before {
+      content: "";
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .slider-toggle { background: #238636; }
+    .toggle input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+    /* History table */
+    .history-list { list-style: none; }
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.88rem;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .dot.success { background: #3fb950; }
+    .dot.skipped { background: #d29922; }
+    .dot.error   { background: #f85149; }
+    .hist-msg { flex: 1; color: #e6edf3; line-height: 1.4; }
+    .hist-time { color: #8b949e; white-space: nowrap; font-size: 0.8rem; }
+
+    /* Init card */
+    #initCard { display: none; }
+    .init-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 500px) { .init-form-row { grid-template-columns: 1fr; } }
+
+    /* Loading state */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #30363d;
+      border-top-color: #3fb950;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      color: #8b949e;
+      padding: 24px 0;
+      font-size: 0.9rem;
+    }
+
+    .next-run-info {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-top: 8px;
+    }
+    .next-run-info strong { color: #3fb950; }
+
+    footer {
+      text-align: center;
+      color: #8b949e;
+      font-size: 0.78rem;
+      margin-top: 40px;
+    }
+    footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🌊</span>
+  <h1>GitHub Green Wave</h1>
+  <div id="scheduleBadge" class="status-badge off">⏸ Schedule Off</div>
+</header>
+
+<div class="grid" style="max-width:900px;margin:0 auto;">
+
+  <!-- Run Now -->
+  <div class="card">
+    <h2>Manual Trigger</h2>
+    <div class="run-row">
+      <button class="btn btn-green" id="runBtn" onclick="triggerRun()">
+        ▶ Run Now
+      </button>
+      <span id="runStatus">Click to trigger an immediate commit.</span>
+    </div>
+    <p class="next-run-info">Next scheduled run: <strong id="nextRun">–</strong></p>
+  </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <h2>Stats</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:1.8rem;font-weight:700;color:#3fb950" id="statSuccess">–</div>
+        <div style="font-size:0.8rem;color:#8b949e">Successful</div>
+      </div>
+      <div>
+        <div style="font-size:1.8rem;font-weight:700;color:#d29922" id="statSkipped">–</div>
+        <div style="font-size:0.8rem;color:#8b949e">Skipped</div>
+      </div>
+      <div>
+        <div style="font-size:1.8rem;font-weight:700;color:#f85149" id="statError">–</div>
+        <div style="font-size:0.8rem;color:#8b949e">Errors</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <h2>Settings</h2>
+
+    <div class="toggle-row">
+      <span class="toggle-label">🕐 Schedule Enabled</span>
+      <label class="toggle">
+        <input type="checkbox" id="scheduleToggle" onchange="toggleSchedule()" />
+        <span class="slider-toggle"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <span class="toggle-label">🐛 Create &amp; Close Issues daily</span>
+        <div style="font-size:0.78rem;color:#8b949e;margin-top:2px;">Requires Issues permission on token</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="issuesToggle" onchange="toggleIssues()" />
+        <span class="slider-toggle"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <span class="toggle-label">🔀 Create &amp; Merge PRs daily</span>
+        <div style="font-size:0.78rem;color:#8b949e;margin-top:2px;">Requires Pull requests permission on token</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="prsToggle" onchange="togglePRs()" />
+        <span class="slider-toggle"></span>
+      </label>
+    </div>
+
+    <div class="form-row" style="margin-top:16px;">
+      <label>Commit Probability</label>
+      <div class="slider-row">
+        <input type="range" id="probSlider" min="0" max="1" step="0.05" value="1"
+          oninput="document.getElementById('probValue').textContent = Math.round(this.value*100)+'%'" />
+        <span id="probValue">100%</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Commit Message</label>
+      <input type="text" id="commitMessage" placeholder="Update file" />
+    </div>
+
+    <button class="btn btn-blue" onclick="saveSettings()" style="margin-top:4px;">
+      💾 Save Settings
+    </button>
+    <span id="saveStatus" style="margin-left:12px;font-size:0.85rem;color:#8b949e;"></span>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2>Commit History (last 20)</h2>
+    <ul class="history-list" id="historyList">
+      <li class="empty-state"><span class="spinner"></span> Loading…</li>
+    </ul>
+  </div>
+
+  <!-- Init Settings (only shown if not yet initialized) -->
+  <div class="card full-width" id="initCard">
+    <h2>⚙️ First-Time Setup — Initialize Settings</h2>
+    <p style="font-size:0.9rem;color:#8b949e;margin-bottom:16px;">
+      No settings found. Fill in your details below and click Initialize.
+      (Your GitHub token is stored securely as a Convex environment variable — not here.)
+    </p>
+    <div class="init-form-row">
+      <div class="form-row">
+        <label>GitHub Username</label>
+        <input type="text" id="initOwner" value="HanzoHas" />
+      </div>
+      <div class="form-row">
+        <label>Repository Name</label>
+        <input type="text" id="initRepo" value="commmit" />
+      </div>
+      <div class="form-row">
+        <label>Branch</label>
+        <input type="text" id="initBranch" value="main" />
+      </div>
+      <div class="form-row">
+        <label>File to Update</label>
+        <input type="text" id="initFilename" value="dummy.txt" />
+      </div>
+      <div class="form-row">
+        <label>Author Name</label>
+        <input type="text" id="initAuthorName" value="HanzoHas" />
+      </div>
+      <div class="form-row">
+        <label>Author Email</label>
+        <input type="email" id="initAuthorEmail" value="micaharthur947@gmail.com" />
+      </div>
+    </div>
+    <button class="btn btn-green" onclick="initializeSettings()">✅ Initialize Settings</button>
+    <span id="initStatus" style="margin-left:12px;font-size:0.85rem;color:#8b949e;"></span>
+  </div>
+
+</div>
+
+<footer style="margin-top:40px;">
+  Powered by <a href="https://convex.dev" target="_blank">Convex</a> ·
+  Deployment: <a href="https://dashboard.convex.dev" target="_blank">acoustic-grasshopper-878</a>
+</footer>
+
+<!-- Convex Client SDK (loaded from CDN) -->
+<script type="module">
+  import { ConvexClient } from "https://cdn.jsdelivr.net/npm/convex@1.45.0/+esm";
+
+  // ─── Config ───────────────────────────────────────────────────────────────
+  const CONVEX_URL = "https://rapid-chameleon-526.convex.cloud";
+  const client = new ConvexClient(CONVEX_URL);
+
+  // ─── Expose to global scope for onclick handlers ──────────────────────────
+  window._convex = client;
+
+  // ─── Subscribe to live data ───────────────────────────────────────────────
+  client.onUpdate(
+    { name: "settings:getSettings", args: {} },
+    (settings) => renderSettings(settings)
+  );
+
+  client.onUpdate(
+    { name: "settings:getHistory", args: { limit: 20 } },
+    (history) => renderHistory(history)
+  );
+
+  // ─── Render functions ─────────────────────────────────────────────────────
+  function renderSettings(settings) {
+    if (!settings) {
+      document.getElementById("initCard").style.display = "block";
+      document.getElementById("scheduleBadge").className = "status-badge off";
+      document.getElementById("scheduleBadge").textContent = "⏸ No Settings";
+      return;
+    }
+    document.getElementById("initCard").style.display = "none";
+
+    // Schedule badge
+    const badge = document.getElementById("scheduleBadge");
+    if (settings.scheduleEnabled) {
+      badge.className = "status-badge on";
+      badge.textContent = "✅ Schedule On";
+    } else {
+      badge.className = "status-badge off";
+      badge.textContent = "⏸ Schedule Off";
+    }
+
+    // Toggle
+    document.getElementById("scheduleToggle").checked = settings.scheduleEnabled;
+    document.getElementById("issuesToggle").checked = settings.createIssues ?? true;
+    document.getElementById("prsToggle").checked    = settings.createPRs ?? true;
+
+    // Probability
+    const pct = Math.round(settings.probability * 100);
+    document.getElementById("probSlider").value = settings.probability;
+    document.getElementById("probValue").textContent = pct + "%";
+
+    // Commit message
+    document.getElementById("commitMessage").value = settings.commitMessage;
+
+    // Next run (noon UTC tomorrow)
+    const now = new Date();
+    const next = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + (now.getUTCHours() >= 12 ? 1 : 0),
+      12, 0, 0
+    ));
+    document.getElementById("nextRun").textContent = settings.scheduleEnabled
+      ? next.toLocaleString()
+      : "Paused";
+  }
+
+  function renderHistory(history) {
+    if (!history) return;
+
+    // Stats
+    const success = history.filter(h => h.status === "success").length;
+    const skipped = history.filter(h => h.status === "skipped").length;
+    const errors  = history.filter(h => h.status === "error").length;
+    document.getElementById("statSuccess").textContent = success;
+    document.getElementById("statSkipped").textContent = skipped;
+    document.getElementById("statError").textContent   = errors;
+
+    const list = document.getElementById("historyList");
+    if (history.length === 0) {
+      list.innerHTML = `<li class="empty-state">No runs yet. Click "Run Now" to test!</li>`;
+      return;
+    }
+
+    list.innerHTML = history.map(h => {
+      const time = new Date(h.timestamp);
+      const timeStr = time.toLocaleString();
+      return `
+        <li class="history-item">
+          <div class="dot ${h.status}"></div>
+          <span class="hist-msg">${escapeHtml(h.message)}</span>
+          <span class="hist-time">${timeStr}</span>
+        </li>`;
+    }).join("");
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // ─── Actions ──────────────────────────────────────────────────────────────
+  window.triggerRun = async function() {
+    const btn = document.getElementById("runBtn");
+    const status = document.getElementById("runStatus");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Running…`;
+    status.textContent = "Triggering commit…";
+    try {
+      await client.action("greenWave:triggerManualRun", {});
+      status.textContent = "✅ Done! Check history below.";
+    } catch (err) {
+      status.textContent = "❌ Error: " + err.message;
+    }
+    btn.disabled = false;
+    btn.innerHTML = "▶ Run Now";
+  };
+
+  window.toggleSchedule = async function() {
+    const enabled = document.getElementById("scheduleToggle").checked;
+    try {
+      await client.mutation("settings:updateSettings", { scheduleEnabled: enabled });
+    } catch (err) {
+      alert("Error updating schedule: " + err.message);
+    }
+  };
+
+  window.toggleIssues = async function() {
+    const enabled = document.getElementById("issuesToggle").checked;
+    try {
+      await client.mutation("settings:updateSettings", { createIssues: enabled });
+    } catch (err) {
+      alert("Error updating issues setting: " + err.message);
+    }
+  };
+
+  window.togglePRs = async function() {
+    const enabled = document.getElementById("prsToggle").checked;
+    try {
+      await client.mutation("settings:updateSettings", { createPRs: enabled });
+    } catch (err) {
+      alert("Error updating PRs setting: " + err.message);
+    }
+  };
+
+  window.saveSettings = async function() {
+    const probability = parseFloat(document.getElementById("probSlider").value);
+    const commitMessage = document.getElementById("commitMessage").value.trim();
+    const statusEl = document.getElementById("saveStatus");
+    statusEl.textContent = "Saving…";
+    try {
+      await client.mutation("settings:updateSettings", { probability, commitMessage });
+      statusEl.textContent = "✅ Saved!";
+      setTimeout(() => statusEl.textContent = "", 2000);
+    } catch (err) {
+      statusEl.textContent = "❌ " + err.message;
+    }
+  };
+
+  window.initializeSettings = async function() {
+    const statusEl = document.getElementById("initStatus");
+    statusEl.textContent = "Initializing…";
+    try {
+      await client.mutation("settings:initSettings", {
+        repoOwner:   document.getElementById("initOwner").value.trim(),
+        repoName:    document.getElementById("initRepo").value.trim(),
+        branch:      document.getElementById("initBranch").value.trim(),
+        filename:    document.getElementById("initFilename").value.trim(),
+        authorName:  document.getElementById("initAuthorName").value.trim(),
+        authorEmail: document.getElementById("initAuthorEmail").value.trim(),
+      });
+      statusEl.textContent = "✅ Initialized!";
+      document.getElementById("initCard").style.display = "none";
+    } catch (err) {
+      statusEl.textContent = "❌ " + err.message;
+    }
+  };
+</script>
+
+</body>
+</html>

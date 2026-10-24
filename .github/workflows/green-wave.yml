@@ -1,0 +1,19 @@
+# ⛔ DISABLED — Convex cloud cron now handles daily commits automatically.
+# This old workflow ran node run.js which required GitHub Actions runners.
+# Convex runs 24/7 in the cloud — no runner needed, no computer needed.
+#
+# Kept here for reference only. The new workflow is deploy-convex.yml
+
+name: Green Wave Scheduler (DISABLED)
+
+on:
+  # Schedule removed — handled by Convex cron (convex/crons.ts)
+  # Allow manual trigger from Actions tab for debugging only
+  workflow_dispatch:
+
+jobs:
+  green-wave:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Info
+        run: echo "This workflow is disabled. Convex handles daily commits automatically."

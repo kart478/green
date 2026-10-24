@@ -1,0 +1,30 @@
+{
+  "name": "git-green-wave",
+  "description": "Automatically commit to Github to keep your contribution history green",
+  "version": "0.0.1",
+  "author": "Steffen Kühne",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:br-data/webpack-longread-template.git"
+  },
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "functions-framework --target=githubGreenWave",
+    "deploy": "npx convex deploy --yes",
+    "test-run": "node test-run.mjs",
+    "init": "node init-settings.mjs"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "dependencies": {
+    "convex": "^1.48.0",
+    "isomorphic-git": "^1.8.2",
+    "memfs": "^3.1.1"
+  },
+  "devDependencies": {
+    "@google-cloud/functions-framework": "^1.5.0"
+  }
+}
